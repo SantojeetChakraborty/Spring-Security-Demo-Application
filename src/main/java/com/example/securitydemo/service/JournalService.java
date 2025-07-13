@@ -1,6 +1,7 @@
 package com.example.securitydemo.service;
 
 import com.example.securitydemo.models.Journal;
+import com.example.securitydemo.models.User;
 import com.example.securitydemo.repository.JournalRepository;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,8 +16,18 @@ public class JournalService {
     @Autowired
     private JournalRepository journalRepository;
 
-    public void saveJournal(Journal journal){
+    @Autowired
+    private UserService userService;
+
+    public void saveJournal(Journal journal, String username){
+        User user = userService.findByUsername(username);
         journal.setDate(new Date());
+        Journal saved = journalRepository.save(journal);
+        user.getJournalist().add(saved);
+        userService.saveUser(user);
+    }
+
+    public void saveJournal(Journal journal){
         journalRepository.save(journal);
     }
 
@@ -28,7 +39,10 @@ public class JournalService {
         return journalRepository.findById(id);
     }
 
-    public void deleteJournal(ObjectId id){
+    public void deleteJournal(ObjectId id, String username){
+        User user = userService.findByUsername(username);
+        user.getJournalist().removeIf(x->x.getId().equals(id));
+        userService.saveUser(user);
         journalRepository.deleteById(id);
     }
 
